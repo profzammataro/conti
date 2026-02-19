@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spese Mensili</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a24;
+    --surface2: #22222f;
+    --border: #2e2e40;
+    --text: #e8e8f0;
+    --text-muted: #7070a0;
+    --accent: #7c6af7;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --orange: #f97316;
+    --red: #ef4444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px 80px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    width: 44px;
+    height: 44px;
+    background: var(--accent);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.1s, box-shadow 0.2s;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .logo:active { transform: scale(0.92); }
+
+  .logo-click-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+  }
+
+  .logo.clicked .logo-click-ring { border-color: white; }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    letter-spacing: -0.5px;
+  }
+
+  .month-badge {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--text-muted);
+    background: var(--surface2);
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+
+  .total-banner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .total-banner span:first-child {
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .total-banner .total-amount {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--accent);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.3s, background 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--card-color, var(--border));
+    transition: background 0.3s;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    border-color: var(--card-color, var(--accent));
+  }
+
+  .card:active { transform: scale(0.97); }
+
+  .card-icon { font-size: 24px; margin-bottom: 10px; }
+
+  .card-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .card-total {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--card-color, var(--text));
+    transition: color 0.3s;
+  }
+
+  /* Modal */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    width: 100%;
+    max-width: 420px;
+    animation: slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    margin-bottom: 4px;
+  }
+
+  .modal-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+
+  .modal-subtitle span { color: var(--accent); }
+
+  .input-wrap {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .input-wrap::before {
+    content: '€';
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 18px;
+  }
+
+  input[type="number"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 14px 14px 36px;
+    color: var(--text);
+    font-size: 20px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="number"]:focus { border-color: var(--accent); }
+  input[type="number"]::-webkit-inner-spin-button { display: none; }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 13px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-confirm {
+    background: var(--accent);
+    color: white;
+  }
+
+  .btn-cancel {
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  /* Reset button */
+  #reset-btn {
+    display: none;
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 40px;
+    padding: 14px 32px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    z-index: 50;
+    box-shadow: 0 4px 20px rgba(239,68,68,0.4);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(239,68,68,0.4); }
+    50% { box-shadow: 0 4px 32px rgba(239,68,68,0.7); }
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    background: #22c55e;
+    border-radius: 50%;
+    margin-left: auto;
+    margin-right: 0;
+    box-shadow: 0 0 6px #22c55e;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" id="logo">💰<div class="logo-click-ring"></div></div>
+  <div>
+    <h1>Spese Mensili</h1>
+  </div>
+  <div class="month-badge" id="month-badge">—</div>
+</header>
+
+<div class="total-banner">
+  <span>Totale Mese</span>
+  <span class="total-amount" id="grand-total">€ 0,00</span>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Voce</div>
+    <div class="modal-subtitle">Totale: <span id="modal-current">€ 0,00</span></div>
+    <div class="input-wrap">
+      <input type="number" id="amount-input" placeholder="0,00" min="0" step="0.01">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">Annulla</button>
+      <button class="btn btn-confirm" onclick="confirmAdd()">Aggiungi</button>
+    </div>
+  </div>
+</div>
+
+<button id="reset-btn" onclick="resetAll()">🗑️ Nuovo Mese — Reset</button>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDgbOSab7lRL1pKLFkT6MOlTFmtf-xf61Y",
+    authDomain: "meteore-31062.firebaseapp.com",
+    databaseURL: "https://meteore-31062-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "meteore-31062",
+    storageBucket: "meteore-31062.firebasestorage.app",
+    messagingSenderId: "723550096158",
+    appId: "1:723550096518:web:49005ffade790fe979d70f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const categories = [
+    { id: "market",       name: "Spesa Market",         icon: "🛒" },
+    { id: "cibo_fuori",   name: "Cibo Fuori",           icon: "🍽️" },
+    { id: "amazon",       name: "Amazon",               icon: "📦" },
+    { id: "casa_bella",   name: "Casa Bella",           icon: "🏠" },
+    { id: "altro",        name: "Altro",                icon: "🔖" },
+    { id: "farmacia",     name: "Farmacia",             icon: "💊" },
+    { id: "benzina",      name: "Benzina",              icon: "⛽" },
+    { id: "carta_credito",name: "Carta di Credito",     icon: "💳" },
+    { id: "utenze",       name: "Acqua Luce Gas Tel.",  icon: "💡" },
+    { id: "calcio",       name: "Calcio",               icon: "⚽" },
+    { id: "danza",        name: "Danza",                icon: "💃" },
+    { id: "teatro",       name: "Teatro",               icon: "🎭" },
+    { id: "condominio",   name: "Condominio",           icon: "🏢" },
+    { id: "supercond",    name: "Supercondominio",      icon: "🏗️" },
+    { id: "consorzio",    name: "Consorzio",            icon: "🤝" },
+  ];
+
+  const DB_PATH = "spese_mensili";
+  let totals = {};
+  let currentCat = null;
+
+  // Month badge
+  const now = new Date();
+  document.getElementById('month-badge').textContent =
+    now.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+
+  function getColor(amount) {
+    if (amount <= 0)   return null;
+    if (amount < 100)  return '#22c55e';
+    if (amount < 200)  return '#eab308';
+    if (amount < 300)  return '#f97316';
+    return '#ef4444';
+  }
+
+  function fmt(n) {
+    return '€ ' + (n || 0).toFixed(2).replace('.', ',');
+  }
+
+  function buildGrid() {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    let grand = 0;
+    categories.forEach(cat => {
+      const total = totals[cat.id] || 0;
+      grand += total;
+      const color = getColor(total);
+      const card = document.createElement('div');
+      card.className = 'card';
+      if (color) card.style.setProperty('--card-color', color);
+      card.innerHTML = `<div class="card-icon">${cat.icon}</div>
+        <div class="card-name">${cat.name}</div>
+        <div class="card-total">${fmt(total)}</div>`;
+      card.onclick = () => openModal(cat);
+      grid.appendChild(card);
+    });
+    document.getElementById('grand-total').textContent = fmt(grand);
+  }
+
+  // Listen realtime
+  const dbRef = ref(db, DB_PATH);
+  onValue(dbRef, snap => {
+    totals = snap.val() || {};
+    buildGrid();
+  });
+
+  // Modal
+  window.openModal = function(cat) {
+    currentCat = cat;
+    document.getElementById('modal-title').textContent = cat.icon + ' ' + cat.name;
+    document.getElementById('modal-current').textContent = fmt(totals[cat.id] || 0);
+    document.getElementById('amount-input').value = '';
+    document.getElementById('overlay').classList.add('open');
+    setTimeout(() => document.getElementById('amount-input').focus(), 100);
+  };
+
+  window.closeModal = function() {
+    document.getElementById('overlay').classList.remove('open');
+    currentCat = null;
+  };
+
+  window.confirmAdd = async function() {
+    if (!currentCat) return;
+    const val = parseFloat(document.getElementById('amount-input').value);
+    if (isNaN(val) || val <= 0) return;
+    const newTotal = (totals[currentCat.id] || 0) + val;
+    totals[currentCat.id] = newTotal;
+    await set(ref(db, `${DB_PATH}/${currentCat.id}`), newTotal);
+    closeModal();
+  };
+
+  window.resetAll = async function() {
+    if (!confirm('Sei sicuro di voler resettare tutte le spese per iniziare un nuovo mese?')) return;
+    await set(ref(db, DB_PATH), null);
+    totals = {};
+    hideReset();
+  };
+
+  // Logo click counter
+  let logoClicks = 0;
+  let logoTimer = null;
+  document.getElementById('logo').addEventListener('click', () => {
+    logoClicks++;
+    const logo = document.getElementById('logo');
+    logo.classList.add('clicked');
+    setTimeout(() => logo.classList.remove('clicked'), 200);
+    if (logoClicks >= 5) {
+      showReset();
+      logoClicks = 0;
+    }
+    clearTimeout(logoTimer);
+    logoTimer = setTimeout(() => { logoClicks = 0; }, 3000);
+  });
+
+  function showReset() {
+    document.getElementById('reset-btn').style.display = 'block';
+  }
+  function hideReset() {
+    document.getElementById('reset-btn').style.display = 'none';
+  }
+  window.hideReset = hideReset;
+
+  // Close overlay on bg click
+  document.getElementById('overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('overlay')) closeModal();
+  });
+
+  // Enter to confirm
+  document.getElementById('amount-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') window.confirmAdd();
+  });
+</script>
+</body>
+</html>
