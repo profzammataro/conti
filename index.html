@@ -258,6 +258,12 @@
     color: white;
   }
 
+  .btn-subtract {
+    background: var(--surface2);
+    color: var(--red);
+    border: 1px solid var(--red);
+  }
+
   .btn-cancel {
     background: var(--surface2);
     color: var(--text-muted);
@@ -326,7 +332,8 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-cancel" onclick="closeModal()">Annulla</button>
-      <button class="btn btn-confirm" onclick="confirmAdd()">Aggiungi</button>
+      <button class="btn btn-subtract" onclick="confirmSubtract()">− Sottrai</button>
+      <button class="btn btn-confirm" onclick="confirmAdd()">+ Aggiungi</button>
     </div>
   </div>
 </div>
@@ -439,6 +446,19 @@
     const newTotal = (totals[currentCat.id] || 0) + val;
     totals[currentCat.id] = newTotal;
     await set(ref(db, `${DB_PATH}/${currentCat.id}`), newTotal);
+    document.getElementById('modal-current').textContent = fmt(newTotal);
+    closeModal();
+  };
+
+  window.confirmSubtract = async function() {
+    if (!currentCat) return;
+    const val = parseFloat(document.getElementById('amount-input').value);
+    if (isNaN(val) || val <= 0) return;
+    const current = totals[currentCat.id] || 0;
+    const newTotal = Math.max(0, current - val);
+    totals[currentCat.id] = newTotal;
+    await set(ref(db, `${DB_PATH}/${currentCat.id}`), newTotal);
+    document.getElementById('modal-current').textContent = fmt(newTotal);
     closeModal();
   };
 
@@ -478,7 +498,7 @@
     if (e.target === document.getElementById('overlay')) closeModal();
   });
 
-  // Enter to confirm
+  // Enter to confirm add
   document.getElementById('amount-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') window.confirmAdd();
   });
